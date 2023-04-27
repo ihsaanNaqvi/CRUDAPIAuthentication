@@ -1,0 +1,92 @@
+﻿@using CRUDAPIAuthentication.Data
+@attribute [Authorize]
+@inject HttpClient http;
+@page "/Student"
+
+
+
+<h1> API calling Student DB</h1>
+<br />
+<div class="col-8">
+<h5>Student Name</h5>
+<input type="Text" @bind="student.Name" placeholder="Name..." />
+    <br />
+
+<h5>Student Roll No</h5>
+<input type="Text" style="margin-bottom:10px" @bind="student.Roll" placeholder="Roll no..." />
+<br />
+ <button class="btn btn alert-primary" hidden=@IsEdit @onclick="SaveStudent">Add Student</button>
+<button class="btn btn alert-primary" @onclick="EditStudent">Update Student</button>
+</div>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Student Id</th>
+            <th>Name</th>
+            <th>Roll</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var Stu in students)
+        {
+            <tr>
+                <td>@Stu.StudentId</td>
+                <td>@Stu.Name</td>
+                <td>@Stu.Roll</td>
+
+
+                <td>   
+                    <button style="margin-right:10px" class="btn alert-success" @onclick="(()=>SetStudentProperties(Stu) )"> Edit</button>
+                    <button class="btn alert-danger" @onclick="(()=>DeleteStudent(Stu) )"> Delete</button>
+                </td>
+            </tr>
+
+        }
+    </tbody>
+</table>
+
+
+@code {
+    Student student = new Student();
+    public bool IsEdit = false;
+    List<Student> students = new List<Student>();
+
+    public async Task GetStudents()
+    {
+        students = await http.GetFromJsonAsync<List<Student>>("https://localhost:44381/api/StudentDb/GetStudents");
+        
+    }
+    private async Task SaveStudent()
+    {
+        students = await http.PostJsonAsync<List<Student>>("https://localhost:44381/api/StudentDb/SaveStudents", student);
+        student = new Student();
+    }
+
+    private async Task EditStudent()
+    {
+
+        students = await http.PutJsonAsync<List<Student>>("https://localhost:44381/api/StudentDb/UpdateStudents/"+student.StudentId, student);
+        IsEdit = false;
+        student = new Student();
+
+    }
+
+    private async Task DeleteStudent(Student student)
+    {
+        await http.DeleteAsync("https://localhost:44381/api/StudentDb/DeleteStudent/" + student.StudentId);
+        students = await http.GetFromJsonAsync<List<Student>>("https://localhost:44381/api/StudentDb/GetStudents");
+        student = new Student();
+    }
+    private void SetStudentProperties(Student oStudent)
+    {
+        IsEdit = true;
+        student = oStudent;
+    }
+    protected override async Task OnInitializedAsync()
+    {
+        
+        await GetStudents();
+        
+    }
+}
